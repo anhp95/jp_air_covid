@@ -69,16 +69,7 @@ class MADataset:
         self.ma_name = ma_name
         self.year = f"{year}"
 
-        self.pollutant_vars = [
-            "CH4",
-            "CO",
-            "NO",
-            "NO2",
-            "NOX",
-            "OX",
-            "PM25",
-            "SO2",
-        ]
+        self.pollutant_vars = ["CH4", "CO", "NO", "NO2", "NOX", "OX", "PM25", "SO2"]
         self.weather_vars = ["HUM", "SUN", "WD", "WS"]
 
         self.jcode = []
@@ -123,19 +114,14 @@ class MADataset:
 
         gdf_bound = gpd.read_file(os.path.join(MA_ATTR_DIR, f"{self.ma_name}.shp"))
         self.jcode = [str(code) for code in gdf_bound[COL_JCODE].values if code]
-
         self.ma_df = self.annual_df.loc[self.annual_df[COL_MUN_CODE].isin(self.jcode)]
 
     def _extract_features(self):
         # filter aq vars
         self.aq = self.ma_df.loc[self.ma_df[COL_VAR].isin(self.pollutant_vars)]
         # filter nodata
+
         # daily agg
 
         # filter weather vars
         self.weather = self.ma_df.loc[self.ma_df[COL_VAR].isin(self.weather_vars)]
-
-        
-
-
-# %%
