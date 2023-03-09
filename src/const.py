@@ -28,6 +28,27 @@ JP_EN_MEASURE_COLS = {
     "測定日": "date",
 }
 
+
+LIST_POLLUTANTS = [
+    "CH4",
+    "CO",
+    "NMHC",
+    "NO",
+    "NO2",
+    "NOX",
+    "OX",
+    "PM25",
+    "SO2",
+    "SPM",
+    "SPMB",
+    "THC",
+]
+
+COL_JCODE = "JCODE"
+COL_MUN_CODE = "mun_code"
+COL_STATION_CODE = "station_code"
+COL_VAR = "var"
+
 MA_ATTR_DIR = "D:\SHP\jp_mma\shp_attr"
 
 AIR_DIR = os.path.join(DATA_DIR, "measures/unzip")

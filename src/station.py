@@ -64,35 +64,30 @@ class StationLocation:
         self.station_df["station_type"] = station_types
 
 
-class MAAirQuality:
-    pollutant_vars = [
-        "CH4",
-        "CO",
-        "NMHC",
-        "NO",
-        "NO2",
-        "NOX ",
-        "OX  ",
-        "PM25",
-        "SO2 ",
-    ]
-    weather_vars = [""]
-
-    def __init__(self, name, year) -> None:
-        self.name = name
+class MADataset:
+    def __init__(self, ma_name, year) -> None:
+        self.ma_name = ma_name
         self.year = f"{year}"
+
+        self.pollutant_vars = [
+            "CH4",
+            "CO",
+            "NO",
+            "NO2",
+            "NOX",
+            "OX",
+            "PM25",
+            "SO2",
+        ]
+        self.weather_vars = ["HUM", "SUN", "WD", "WS"]
 
         self.jcode = []
 
-        self._extract_jcode()
         self._load_annual_measures()
+        self._preprocess_measures()
+        self._extract_ma_data()
         self._extract_aq()
-
-    def _extract_jcode(self):
-
-        jcode_col = "JCODE"
-        gdf_bound = gpd.read_file(os.path.join(MA_ATTR_DIR, f"{self.name}.shp"))
-        self.jcode = [str(code) for code in gdf_bound[jcode_col].values if code]
+        self._extract_weather()
 
     def _load_annual_measures(self):
         annual_files = []
@@ -108,29 +103,39 @@ class MAAirQuality:
             df = pd.read_csv(txt, encoding="shift_jisx0213")
             list_df.append(df)
 
-        annual_df = pd.concat(list_df, ignore_index=True).rename(
+        self.annual_df = pd.concat(list_df, ignore_index=True).rename(
             columns=JP_EN_MEASURE_COLS
         )
-        # extract full mun_code
-        annual_df["mun_code"] = [
+
+    def _preprocess_measures(self):
+        # extract full mun_code by adding pref code: 101 -> 23101
+        self.annual_df[COL_MUN_CODE] = [
             f"{str(sc)[0:2]}{mc}" if len(str(sc)) > 7 else f"0{str(sc)[0]}{mc}"
             for sc, mc in zip(
-                annual_df["station_code"].values, annual_df["mun_code"].values
+                self.annual_df[COL_STATION_CODE].values,
+                self.annual_df[COL_MUN_CODE].values,
             )
         ]
-        self.annual_df = annual_df
+        # rm space in var: "SO2  " -> "SO2"
+        self.annual_df[COL_VAR] = [vc.strip() for vc in self.annual_df[COL_VAR].values]
 
-    def _extract_aq(self):
+    def _extract_ma_data(self):
 
-        self.aq = self.annual_df.loc[self.annual_df["mun_code"].isin(self.jcode)]
+        gdf_bound = gpd.read_file(os.path.join(MA_ATTR_DIR, f"{self.ma_name}.shp"))
+        self.jcode = [str(code) for code in gdf_bound[COL_JCODE].values if code]
 
-    def _preprocess_aq(self):
+        self.ma_df = self.annual_df.loc[self.annual_df[COL_MUN_CODE].isin(self.jcode)]
+
+    def _extract_features(self):
+        # filter aq vars
+        self.aq = self.ma_df.loc[self.ma_df[COL_VAR].isin(self.pollutant_vars)]
         # filter nodata
         # daily agg
-        pass
 
-    def _extract_weather(self):
-        pass
+        # filter weather vars
+        self.weather = self.ma_df.loc[self.ma_df[COL_VAR].isin(self.weather_vars)]
+
+        
 
 
 # %%
