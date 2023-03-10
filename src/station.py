@@ -1,7 +1,9 @@
 #%%
+import xarray as xr
 import pandas as pd
 import geopandas as gpd
 import glob
+import cfgrib
 
 from shapely.geometry import Point
 
@@ -62,6 +64,34 @@ class StationLocation:
             extract_station_type(sc) for sc in self.station_df["station_code"].values
         ]
         self.station_df["station_type"] = station_types
+
+
+class ERA5:
+    def __init__(self) -> None:
+        self.era5_df = pd.DataFrame()
+
+    def _load_grib(self):
+        # load data
+        blh_tcc = cfgrib.open_dataset(os.path.join(WEATHER_DIR, "blh_cloud_cover.grib"))
+
+        ws_wd_temp_sp = cfgrib.open_dataset(
+            os.path.join(WEATHER_DIR, "ws_wd_temp_surface_pressure.grib")
+        )
+
+        uvb_ssr_ssrd = cfgrib.open_dataset(
+            os.path.join(WEATHER_DIR, "uvb_ssr_ssrd.grib")
+        )
+
+        # remove 2017 first date and group 12 hour for step
+        uvb_ssr_ssrd = uvb_ssr_ssrd.mean(dim="step")
+        uvb_ssr_ssrd = uvb_ssr_ssrd.groupby(uvb_ssr_ssrd.time.dt.date).mean()
+        uvb_ssr_ssrd = uvb_ssr_ssrd.isel(date=slice(1, 1097))
+
+        blh_tcc = blh_tcc.groupby(blh_tcc.time.dt.time).mean()
+        blh_tcc = blh_tcc.rename({"date": "time"})
+        ws_wd_temp_sp = ws_wd_temp_sp.groupby(ws_wd_temp_sp.time.dt.time).mean()
+
+        self.merge_features = xr.merge([ws_wd_temp_sp, blh_tcc, uvb_ssr_ssrd])
 
 
 class MADataset:
@@ -125,3 +155,6 @@ class MADataset:
 
         # filter weather vars
         self.weather = self.ma_df.loc[self.ma_df[COL_VAR].isin(self.weather_vars)]
+
+
+# %%

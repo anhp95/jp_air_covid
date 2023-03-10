@@ -51,7 +51,8 @@ COL_VAR = "var"
 
 MA_ATTR_DIR = "D:\SHP\jp_mma\shp_attr"
 
-AIR_DIR = os.path.join(DATA_DIR, "measures/unzip")
+AIR_DIR = os.path.join(DATA_DIR, "measures", "unzip")
+WEATHER_DIR = os.path.join(DATA_DIR, "measures", "era5")
 
 WORLD_SHP = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
 
